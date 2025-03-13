@@ -1,10 +1,23 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from telethon import TelegramClient
 from telethon.tl.functions.users import GetFullUserRequest
-import os
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Enable CORS to allow frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change this to your frontend URL in production
+    allow_methods=["OPTIONS", "POST"],
+    allow_headers=["*"],
+)
+
+# Handle OPTIONS request for CORS preflight
+@app.options("/scrape")
+async def handle_options():
+    return Response(status_code=204)
 
 class ScrapeRequest(BaseModel):
     api_id: int
