@@ -3,18 +3,23 @@ from pydantic import BaseModel
 from telethon import TelegramClient
 from telethon.tl.functions.users import GetFullUserRequest
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+import traceback
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# Enable CORS to allow frontend requests
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change this to your frontend URL in production
+    allow_origins=["*"],  # Replace with frontend URL in production
     allow_methods=["OPTIONS", "POST"],
     allow_headers=["*"],
 )
 
-# Handle OPTIONS request for CORS preflight
 @app.options("/scrape")
 async def handle_options():
     return Response(status_code=204)
@@ -47,7 +52,6 @@ async def scrape_telegram(data: ScrapeRequest):
             except:
                 bio = "Error fetching bio"
 
-            # Filter by keywords if provided
             if data.keywords:
                 bio_lower = bio.lower()
                 if not any(keyword.lower() in bio_lower for keyword in data.keywords):
@@ -65,4 +69,7 @@ async def scrape_telegram(data: ScrapeRequest):
 
     except Exception as e:
         await client.disconnect()
-        return {"status": "error", "message": str(e)}
+        error_message = str(e)
+        logger.error(f"Error in scrape_telegram: {error_message}")
+        traceback.print_exc()
+        return {"status": "error", "message": error_message}
